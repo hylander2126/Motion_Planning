@@ -106,36 +106,28 @@ class RRT:
         
         # Generate a random point in an ellipsoid
         else:
-            # pass
             # Compute the distance between start and goal - c_min
             c_min = self.dis(self.start, self.goal)
+
             # Calculate center of the ellipsoid - x_center
-            center = [(self.start.row + self.goal.row) / 2, (self.start.col + self.goal.col) / 2]
-            # Compute rotation matrix from elipse to world frame - C
-            theta = -np.arctan2(self.goal.col - self.start.col, self.goal.row - self.start.row)
+            x_center = [(self.start.row + self.goal.row) / 2.0, (self.start.col + self.goal.col) / 2.0]
+
+            # Compute rotation matrix from ellipse to world frame - C
+            theta = np.arctan2(self.goal.col - self.start.col, self.goal.row - self.start.row)
             R = np.array([[np.cos(theta), -np.sin(theta)],
                           [np.sin(theta), np.cos(theta)]])
 
-            # a1 = np.array([(self.goal.row - self.start.row) / self.dis(self.start, self.goal),
-            #                (self.goal.col - self.start.col) / self.dis(self.start, self.goal)]).reshape(2, 1)
-            # I1 = np.array([1, 0]).reshape(1, 2)
-            # M = a1 @ I1
-            # U, _, V = np.linalg.svd(M)
-            # R = U @ np.diag([1.0, np.linalg.det(U) * np.linalg.det(V.T)]) @ V
-
-
             # Compute diagonal matrix - L
-            # L = np.diag([np.array(c_best/2), np.sqrt(c_best**2 - c_min**2) / 2])
-            # print(type(L), L)
-            r = [c_best / 2.0, np.sqrt(abs(c_best ** 2 - c_min ** 2) / 2.0)]
-            L = np.diag(r)
+            L = np.diag([c_best / 2, np.sqrt(c_best ** 2 - c_min ** 2) / 2])
+
             # Cast a sample from a unit ball - x_ball
-            x_ball = np.array([random.uniform(-1, 1) for i in range(2)])
             x_ball = (np.random.normal(0, 1), np.random.normal(0, 1))
+
             # Map ball sample to the ellipsoid - x_rand
-            x_rand = R@L@x_ball + center
+            x_rand = R@L@x_ball + x_center
+
             # Select a point in the ellipsoid
-            point = [x_rand[0], x_rand[0]]
+            point = [x_rand[0], x_rand[1]]
 
         return point
 
@@ -169,7 +161,7 @@ class RRT:
         # Generate a new point
 
         # Regular sampling if c_best <= 0, using self.get_new_point
-        if c_best < 0:
+        if c_best <= 0:
             new_point = self.get_new_point(goal_bias)
         else:
             # Sampling in an ellipsoid if c_best is a positive value, using self.get_new_point_in_ellipsoid
