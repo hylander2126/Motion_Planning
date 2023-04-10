@@ -126,7 +126,7 @@ class DStar:
 
 
     def process_state(self):
-        ''' Pop the node in the open list 
+        ''' Pop the node in the open list
             Process the node based on its state (RAISE or LOWER)
             If RAISE
                 Try to decrease the h value by finding better parent from neighbors
@@ -135,19 +135,49 @@ class DStar:
                 Attach the neighbor as the node's child if this gives a better cost
                 Or update this neighbor's cost if it already is
         '''
-        #### TODO ####
         # Pop node from open list
-        
-        # Get neighbors of the node
-        # using self.get_neighbors
-        
+        node = self.min_node()
+        # Get neighbors of the node, using self.get_neighbors
+        neighbors = self.get_neighbors(node)
+        k = self.get_k_min()
+        self.delete(node)
+
         # If node k is smaller than h (RAISE)
+        if k < node.h:
+            for neighbor in neighbors:
+                neighbor_cost = neighbor.h + self.cost(node, neighbor)
+                if neighbor.h <= k and node.h > neighbor_cost:
+                    node.h = neighbor_cost
+                    node.parent = neighbor
 
         # If node k is the same as h (LOWER)
-
-        # Else node k is smaller than h (RASIE)
-
-        #### TODO END ####
+        if k == node.h:
+            for neighbor in neighbors:
+                node_cost = node.h + self.cost(node, neighbor)
+                if neighbor.tag == 'NEW':
+                    neighbor.parent = node
+                    self.insert(neighbor, node_cost)
+                elif neighbor.parent == node and neighbor.h != node_cost:
+                    neighbor.parent = node
+                    self.insert(neighbor, node_cost)
+                elif neighbor.parent != node and neighbor.h > node_cost:
+                    neighbor.parent = node
+                    self.insert(neighbor, node_cost) #### INSERT COST MIGHT BE WRONG HERE
+        # Else node k is smaller than h (RAISE)
+        else:
+            for neighbor in neighbors:
+                node_cost = node.h + self.cost(node, neighbor)
+                neighbor_cost = neighbor.h + self.cost(node, neighbor)
+                if neighbor.tag == 'NEW':
+                    neighbor.parent = node
+                    self.insert(neighbor, node_cost)
+                elif neighbor.parent == node and neighbor.h != node_cost:
+                    neighbor.parent = node
+                    self.insert(neighbor, node_cost)
+                elif neighbor.parent != node and neighbor.h > node_cost:
+                    self.insert(node, node_cost)
+                elif neighbor.parent != node and node.h > neighbor_cost and neighbor.tag == 'CLOSED' and neighbor.h > k:
+                    self.insert(neighbor, neighbor.h)
 
         return self.get_k_min()
 
@@ -156,24 +186,26 @@ class DStar:
         ''' Replan the trajectory until 
             no better path is possible or the open list is empty 
         '''
-        #### TODO ####
         # Call self.process_state() until it returns k_min >= h(Y) or open list is empty
         # The cost change will be propagated
+        k_min = -math.inf
+        while k_min < node.h:
+            k_min = self.process_state()
+            if k_min == -1:
+                break
 
-        #### TODO END ####
-        
 
-    def modify_cost(self, obsatcle_node, neighbor):
+    def modify_cost(self, obstacle_node, neighbor):
         ''' Modify the cost from the affected node to the obstacle node and 
             put it back to the open list
         ''' 
-        #### TODO ####
-        # Change the cost from the dynamic obsatcle node to the affected node
+        # Change the cost from the dynamic obstacle node to the affected node
         # by setting the obstacle_node.is_obs to True (see self.cost())
-        
-        # Put the obsatcle node and the neighbor node back to Open list 
-        
-        #### TODO END ####
+
+        # Put the obstacle node and the neighbor node back to Open list
+        obstacle_node.is_obs = True
+        if obstacle_node.tag == 'CLOSED':
+            self.insert(obstacle_node, self.cost(neighbor, obstacle_node))
 
         return self.get_k_min()
 
@@ -183,16 +215,16 @@ class DStar:
             If any of the neighbor node is a dynamic obstacle
             the cost from the adjacent node to the dynamic obstacle node should be modified
         '''
-        #### TODO ####
         # Sense the neighbors to see if they are new obstacles
-        
-            # If neighbor.is_dy_obs == True but neighbor.is_obs == Flase, 
+        for neighbor in self.get_neighbors(node):
+            # If neighbor.is_dy_obs == True but neighbor.is_obs == False,
             # the neighbor is a new dynamic obstacle
-            
+            if neighbor.is_dy_obs and not neighbor.is_obs:
+                neighbor.is_obs = True
                 # Modify the cost from this neighbor node to all this neighbor's neighbors
                 # using self.modify_cost
-
-        #### TODO END ####
+                for nested_neighbor in self.get_neighbors(neighbor):
+                    self.modify_cost(neighbor, nested_neighbor)
 
 
     def insert(self, node, new_h):
@@ -225,12 +257,16 @@ class DStar:
             Check from start to goal to see if any change happens in the grid, 
             modify the cost and replan in the new map
         '''
-        #### TODO ####
         # Search from goal to start with the pre-known map
-        
-            # Process until open set is empty or start is reached
-            # using self.process_state()
-            
+        self.goal.h = 0
+        self.insert(self.goal, self.goal.h)
+        this_node = self.start
+
+        # Process until open set is empty or start is reached, using self.process_state()
+        while this_node.tag != 'CLOSED':
+            k_min = self.process_state()
+            if k_min == -1:
+                break
         
         # Visualize the first path if found
         self.get_backpointer_list(self.start)
@@ -239,31 +275,26 @@ class DStar:
             print("No path is found")
             return
 
-        # Start from start to goal
-        # Update the path if there is any change in the map
-
-            # Check if any repair needs to be done
-            # using self.prepare_repair
-
-            # Replan a path from the current node
-            # using self.repair_replan
-
+        # Start from start to goal, Update the path if there is any change in the map
+        while this_node != self.goal:
+            # Check if any repair needs to be done, using self.prepare_repair
+            self.prepare_repair(this_node)
+            # Replan a path from the current node, using self.repair_replan
+            self.repair_replan(this_node)
             # Get the new path from the current node
+            self.get_backpointer_list(this_node)
             
-            # Uncomment this part when you have finished the previous part
-            # for visualizing each move and replanning
-            '''
+            # Uncomment this part when you have finished the previous part for visualizing each move and replanning
             # Visualize the path in progress
             self.draw_path(self.dynamic_grid, "Path in progress")
 
             if self.path == []:
                 print("No path is found")
                 return
-            '''
-            # Get the next node to continue
 
-        #### TODO END ####
-                
+            # Get the next node to continue
+            this_node = this_node.parent
+
 
     def get_backpointer_list(self, node):
         ''' Keep tracing back to get the path from a given node to goal '''
