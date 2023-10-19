@@ -2,7 +2,7 @@
 
 ## Overview
 
-In this assignment, you are going to implement **PRM** algorithm. You are required to implement 4 different sampling methods - **uniform sampling**, **random sampling**, **gaussian sampling** and **bridge sampling**. This template is provided to you as a starting point. After you finish coding, you would be able to run these algorithms to find a path in a map, and visualize the result.
+In this assignment, you are going to implement **PRM** AND **RRT** and **RRT*** algorithms. For **PRM** you are required to implement 4 different sampling methods - **uniform sampling**, **random sampling**, **gaussian sampling** and **bridge sampling**. This template is provided to you as a starting point. After you finish coding, you would be able to run these algorithms to find a path in a map, and visualize the result.
 
 Files included:
 
@@ -46,6 +46,14 @@ Having connected start and goal node in the graph, we could use Dijkstra algorit
 
 Finally, as PRM is a multi-query planning algorithms, one could call `search` with other start and goal point. So the previous start and goal nodes and their edges need to be removed in the end of each query phase. This part is also implemented already.
 
+## RRT
+
+For simplicity, this template uses a class 'Node' and a list 'vertices' in class 'RRT' as a tree structure. If you prefer to use other tree structure, please feel free to do so.
+
+You would code RRT in the function `RRT`. In each step, get a new point, get its nearest node, extend the node and check collision to decide whether to add or drop this node. When you add a new node to the tree, remember to set the cost and parent of the new node, and add the new node to the list 'vertices'. You will also need to check if it reaches the neighbor region of the goal. If so, connect to the goal directly and set the found flag to be true.
+
+You would code RRT* in the function `RRT_star`. The first few steps are pretty much the same as RRT. Besides, when a new node is added, you will need to rewire the new node AND all its neighbor nodes. Even a path is found, the algorithm should not stop as adding new nodes will possibly optimize the current  found path.
+
 Read the description of the functions for more details before implementing.
 
 ---
@@ -62,6 +70,12 @@ This template is only provided as a starting point, feel free to make any modifi
   - Connect the sampling points, start and goal into a graph using a proper method
   
   - Given start and goal, find a path if feasible.
+
+- (5 pts) Your RRT and RRT* are implemented correctly
+
+  - Get proper new nodes in each step
+  - Connect and rewire (RRT*) new nodes
+  - Find a path if feasible
   
   ---
 
@@ -76,6 +90,19 @@ This template is only provided as a starting point, feel free to make any modifi
   - Algorithm results and explanation
     
     Run your code with `python main.py` and **save your results as png images**. Briefly explain why your algorithms would produce these results.
+
+- (2 pts) Documentation
+
+  Besides the code, you should also include a documentation with the following content:
+
+  - Briefly answer the following questions
+
+    - For RRT, what is the main difference between RRT and RRT*? What change does it make in terms of the efficiency of the algorithms and optimality of the search result?
+    - Compare RRT with the results obtained with PRM in the previous assignment. What are the advantages and disadvantages?
+    
+  - Algorithm results and explanation
+    
+    Run your code with `python main.py` and **save your results as png images**. Briefly explain why your algorithms would produce these results. Why RRT and RRT* result in different trees? How different sampling methods lead to different sample sets in the graph?
     
   - Reference paper and resources if any
   
